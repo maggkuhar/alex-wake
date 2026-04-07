@@ -1,0 +1,75 @@
+{% extends '_base.html' %}
+{% block title %}Кабинет — Alex Wake{% endblock %}
+{% block content %}
+<h1 style="font-size:28px;font-weight:normal;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;">Личный <span style="color:#c9a96e;">кабинет</span></h1>
+<p style="font-family:Arial;color:#888;margin-bottom:32px;">{{ user.name }} · {{ user.email }} · <span style="color:#c9a96e;">{% if user.role == 'artist' %}Художник{% else %}Покупатель{% endif %}</span></p>
+
+{% if user.role == 'artist' %}
+<div style="display:flex;gap:12px;margin-bottom:32px;">
+    <a href="/cabinet/upload" class="btn btn-primary">+ Добавить картину</a>
+    <a href="/deposit" class="btn btn-outline">Депонировать через ЕДРИД</a>
+</div>
+{% endif %}
+
+{% if user.role == 'artist' and my_paintings %}
+<h2 style="font-size:20px;font-weight:normal;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;">Мои работы</h2>
+<div class="paintings-grid" style="margin-bottom:48px;">
+    {% for p in my_paintings %}
+    <div class="painting-card">
+        <a href="/painting/{{ p.id }}">
+            {% if p.image %}
+            <img src="/static/images/paintings/{{ p.image }}" alt="{{ p.title }}">
+            {% else %}
+            <div style="height:180px;background:#f0ece6;display:flex;align-items:center;justify-content:center;font-size:36px;">🖼</div>
+            {% endif %}
+            <div class="painting-card-body">
+                <div class="painting-card-title">{{ p.title }}</div>
+                <div class="painting-card-price">{{ "%.0f"|format(p.price) }} ₽</div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2 style="font-size:20px;font-weight:normal;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px;">Мои заказы</h2>
+{% if orders %}
+<div style="background:#fff;border:1px solid #e8e4de;">
+    {% for o in orders %}
+    <div style="padding:16px 20px;border-bottom:1px solid #f0ece6;font-family:Arial;font-size:13px;display:flex;justify-content:space-between;">
+        <span>Заказ #{{ o.id }} от {{ o.created_at[:10] }}</span>
+        <span style="color:#c9a96e;">{{ "%.0f"|format(o.total) }} ₽</span>
+        <span style="color:#888;">{{ o.status }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="font-family:Arial;color:#aaa;padding:32px;text-align:center;">Заказов пока нет</div>
+{% endif %}
+
+{% if favorites %}
+<h2 style="font-size:20px;font-weight:normal;letter-spacing:2px;text-transform:uppercase;margin:40px 0 20px;">Избранное</h2>
+<div class="paintings-grid">
+    {% for p in favorites %}
+    <div class="painting-card">
+        <a href="/painting/{{ p.id }}">
+            {% if p.image %}
+            <img src="/static/images/paintings/{{ p.image }}" alt="{{ p.title }}">
+            {% else %}
+            <div style="height:180px;background:#f0ece6;display:flex;align-items:center;justify-content:center;font-size:36px;">🖼</div>
+            {% endif %}
+            <div class="painting-card-body">
+                <div class="painting-card-title">{{ p.title }}</div>
+                <div class="painting-card-artist">{{ p.artist_name }}</div>
+                <div class="painting-card-price">{{ "%.0f"|format(p.price) }} ₽</div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div style="margin-top:40px;">
+    <a href="/logout" style="font-family:Arial;font-size:13px;color:#aaa;text-decoration:none;">Выйти из аккаунта</a>
+</div>
+{% endblock %}

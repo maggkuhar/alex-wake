@@ -164,6 +164,28 @@ def init_db():
         FOREIGN KEY (painting_id) REFERENCES paintings(id)
     )''')
 
+    # Депонирование
+    conn.execute('''CREATE TABLE IF NOT EXISTS deposits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        painting_id INTEGER NOT NULL UNIQUE,
+        artist_id INTEGER NOT NULL,
+        artist_full_name TEXT NOT NULL,
+        passport_data TEXT,
+        description TEXT,
+        status TEXT DEFAULT 'новая',
+        certificate_file TEXT,
+        edrid_number TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (painting_id) REFERENCES paintings(id),
+        FOREIGN KEY (artist_id) REFERENCES users(id)
+    )''')
+
+    # Добавляем print_price если нет
+    try:
+        conn.execute('ALTER TABLE paintings ADD COLUMN print_price REAL')
+    except:
+        pass
+
     # Подписки на художников/тематики
     conn.execute('''CREATE TABLE IF NOT EXISTS subscriptions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

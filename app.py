@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash, send_file
 from database import init_db, get_db
-import hashlib, os
+from watermark import apply_watermark, ORIGINALS_DIR, WATERMARKED_DIR
+import hashlib, os, uuid
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'alexwake-secret-key')
@@ -296,8 +297,10 @@ def cabinet():
         my_paintings = db.execute('SELECT * FROM paintings WHERE artist_id=? ORDER BY created_at DESC',
             (user['id'],)).fetchall()
     db.close()
+    deposits = db.execute('SELECT painting_id FROM deposits WHERE artist_id=?', (user['id'],)).fetchall() if user['role'] == 'artist' else []
+    deposited_ids = [d['painting_id'] for d in deposits]
     return render_template('cabinet.html', orders=orders, favorites=favorites,
-        my_paintings=my_paintings, active_page='cabinet')
+        my_paintings=my_paintings, deposited_ids=deposited_ids, active_page='cabinet')
 
 # ─── Блок 7: Избранное ──────────────────────────────────────────────────────
 
@@ -348,6 +351,116 @@ def auction_bid(aid):
         db.commit()
     db.close()
     return redirect(url_for('auctions'))
+
+# ─── Загрузка картин художником ─────────────────────────────────────────────
+
+ALLOWED = {'jpg', 'jpeg', 'png', 'webp'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED
+
+@app.route('/cabinet/upload', methods=['GET', 'POST'])
+def upload_painting():
+    user = current_user()
+    if not user or user['role'] != 'artist':
+        return redirect(url_for('login'))
+    db = get_db()
+    themes = db.execute('SELECT * FROM themes ORDER BY name').fetchall()
+    techniques = db.execute('SELECT * FROM techniques ORDER BY name').fetchall()
+    db.close()
+
+    if request.method == 'POST':
+        title        = request.form.get('title', '').strip()
+        description  = request.form.get('description', '').strip()
+        price        = float(request.form.get('price', 0))
+        print_price  = request.form.get('print_price', '').strip()
+        can_print    = 1 if print_price else 0
+        width_cm     = request.form.get('width_cm', '') or None
+        height_cm    = request.form.get('height_cm', '') or None
+        theme_id     = request.form.get('theme_id', '') or None
+        technique_id = request.form.get('technique_id', '') or None
+        year         = request.form.get('year', '') or None
+        file         = request.files.get('image')
+
+        if not title or not file or not allowed_file(file.filename):
+            flash('Заполните название и загрузите изображение (jpg/png)')
+            return render_template('upload_painting.html', themes=themes, techniques=techniques)
+
+        ext = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"{uuid.uuid4().hex}.{ext}"
+
+        # Сохраняем оригинал
+        file.save(os.path.join(ORIGINALS_DIR, filename))
+
+        # Накладываем водяной знак → в static/images/paintings/
+        apply_watermark(filename)
+
+        db = get_db()
+        db.execute('''INSERT INTO paintings
+            (artist_id, title, description, price, print_price, can_print,
+             width_cm, height_cm, theme_id, technique_id, year, image)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (user['id'], title, description, price,
+             float(print_price) if print_price else None,
+             can_print, width_cm, height_cm, theme_id, technique_id, year, filename))
+        db.commit()
+        db.close()
+        flash('Картина добавлена')
+        return redirect(url_for('cabinet'))
+
+    return render_template('upload_painting.html', themes=themes, techniques=techniques)
+
+# ─── Скачивание оригинала (только для покупателей после оплаты) ──────────────
+
+@app.route('/download/<int:painting_id>')
+def download_original(painting_id):
+    user = current_user()
+    if not user:
+        return redirect(url_for('login'))
+    db = get_db()
+    # Проверяем что пользователь купил эту картину
+    bought = db.execute('''SELECT oi.id FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        WHERE o.buyer_id=? AND oi.painting_id=? AND o.payment_status="оплачен"''',
+        (user['id'], painting_id)).fetchone()
+    painting = db.execute('SELECT * FROM paintings WHERE id=?', (painting_id,)).fetchone()
+    db.close()
+    if not bought or not painting:
+        flash('Доступ запрещён')
+        return redirect(url_for('cabinet'))
+    original_path = os.path.join(ORIGINALS_DIR, painting['image'])
+    return send_file(original_path, as_attachment=True, download_name=f"{painting['title']}.jpg")
+
+# ─── Депонирование ───────────────────────────────────────────────────────────
+
+@app.route('/deposit', methods=['GET', 'POST'])
+def deposit():
+    user = current_user()
+    if not user or user['role'] != 'artist':
+        return redirect(url_for('login'))
+    db = get_db()
+    my_paintings = db.execute('''SELECT p.*, d.status as deposit_status
+        FROM paintings p
+        LEFT JOIN deposits d ON d.painting_id = p.id
+        WHERE p.artist_id=? ORDER BY p.created_at DESC''', (user['id'],)).fetchall()
+
+    if request.method == 'POST':
+        painting_id = request.form.get('painting_id')
+        artist_full_name = request.form.get('artist_full_name', '').strip()
+        passport = request.form.get('passport', '').strip()
+        description = request.form.get('description', '').strip()
+        if painting_id and artist_full_name:
+            db.execute('''INSERT OR IGNORE INTO deposits
+                (painting_id, artist_id, artist_full_name, passport_data, description, status)
+                VALUES (?,?,?,?,?,"новая")''',
+                (painting_id, user['id'], artist_full_name, passport, description))
+            db.commit()
+            flash('Заявка на депонирование отправлена. Мы свяжемся с вами.')
+        db.close()
+        return redirect(url_for('deposit'))
+
+    db.close()
+    return render_template('deposit.html', my_paintings=my_paintings)
 
 # ─── Запуск ──────────────────────────────────────────────────────────────────
 

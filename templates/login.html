@@ -1,0 +1,21 @@
+{% extends '_base.html' %}
+{% block title %}Войти — Alex Wake{% endblock %}
+{% block content %}
+<div style="max-width:400px;margin:0 auto;">
+    <h1 style="font-size:28px;font-weight:normal;letter-spacing:3px;text-transform:uppercase;margin-bottom:32px;text-align:center;">Вход</h1>
+    <form method="post" style="background:#fff;padding:32px;border:1px solid #e8e4de;">
+        <div style="margin-bottom:20px;">
+            <label style="display:block;font-family:Arial;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;color:#666;">Email</label>
+            <input type="email" name="email" required style="width:100%;padding:12px;border:1px solid #ddd;font-family:Arial;font-size:14px;">
+        </div>
+        <div style="margin-bottom:28px;">
+            <label style="display:block;font-family:Arial;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;color:#666;">Пароль</label>
+            <input type="password" name="password" required style="width:100%;padding:12px;border:1px solid #ddd;font-family:Arial;font-size:14px;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Войти</button>
+    </form>
+    <p style="text-align:center;margin-top:16px;font-family:Arial;font-size:13px;color:#888;">
+        Нет аккаунта? <a href="/register" style="color:#c9a96e;">Зарегистрироваться</a>
+    </p>
+</div>
+{% endblock %}

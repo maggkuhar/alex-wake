@@ -101,5 +101,21 @@
 </footer>
 
 {% block extra_js %}{% endblock %}
+
+<script>
+    // Запрет скачивания картин через правую кнопку и перетаскивание
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.tagName === 'IMG') e.preventDefault();
+    });
+    document.addEventListener('dragstart', function(e) {
+        if (e.target.tagName === 'IMG') e.preventDefault();
+    });
+    // Запрет горячих клавиш сохранения
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+            e.preventDefault();
+        }
+    });
+</script>
 </body>
 </html>
