@@ -1,0 +1,39 @@
+{% extends '_base.html' %}
+{% block title %}{{ a.name }} — Alex Wake{% endblock %}
+{% block content %}
+<div style="display:flex;gap:32px;align-items:start;margin-bottom:48px;">
+    {% if a.avatar %}
+    <img src="/static/images/artists/{{ a.avatar }}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #c9a96e;flex-shrink:0;">
+    {% else %}
+    <div style="width:120px;height:120px;border-radius:50%;background:#f0ece6;display:flex;align-items:center;justify-content:center;font-size:48px;border:3px solid #c9a96e;flex-shrink:0;">🎨</div>
+    {% endif %}
+    <div>
+        <h1 style="font-size:32px;font-weight:normal;margin-bottom:8px;">{{ a.name }}</h1>
+        {% if a.city %}<div style="font-family:Arial;font-size:13px;color:#aaa;margin-bottom:8px;">{{ a.city }}</div>{% endif %}
+        {% if a.rating > 0 %}<div style="color:#c9a96e;font-family:Arial;font-size:14px;margin-bottom:12px;">★ {{ "%.1f"|format(a.rating) }}</div>{% endif %}
+        {% if a.bio %}<p style="font-size:15px;color:#555;line-height:1.7;max-width:600px;">{{ a.bio }}</p>{% endif %}
+        <a href="/messages/{{ a.id }}" class="btn btn-outline btn-sm" style="margin-top:16px;">Написать</a>
+    </div>
+</div>
+
+{% if paintings %}
+<h2 style="font-size:22px;font-weight:normal;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px;">Работы художника</h2>
+<div class="paintings-grid">
+    {% for p in paintings %}
+    <div class="painting-card">
+        <a href="/painting/{{ p.id }}">
+            {% if p.image %}
+            <img src="/static/images/paintings/{{ p.image }}" alt="{{ p.title }}">
+            {% else %}
+            <div style="height:220px;background:#f0ece6;display:flex;align-items:center;justify-content:center;font-size:44px;">🖼</div>
+            {% endif %}
+            <div class="painting-card-body">
+                <div class="painting-card-title">{{ p.title }}</div>
+                <div class="painting-card-price">{{ "%.0f"|format(p.price) }} ₽</div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

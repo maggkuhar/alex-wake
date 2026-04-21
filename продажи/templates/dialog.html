@@ -1,0 +1,28 @@
+{% extends '_base.html' %}
+{% block title %}Чат — Alex Wake{% endblock %}
+{% block content %}
+<div style="max-width:680px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+        <a href="/messages" style="color:#aaa;text-decoration:none;font-size:20px;">←</a>
+        <div style="font-size:18px;">{{ interlocutor.name }}</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e8e4de;padding:20px;min-height:400px;max-height:500px;overflow-y:auto;margin-bottom:16px;display:flex;flex-direction:column;gap:12px;">
+        {% for m in messages %}
+        <div style="display:flex;{% if m.from_user_id == user.id %}justify-content:flex-end{% endif %};">
+            <div style="max-width:70%;padding:10px 14px;border-radius:4px;font-family:Arial;font-size:13px;
+                {% if m.from_user_id == user.id %}background:#c9a96e;color:#fff;{% else %}background:#f0ece6;color:#333;{% endif %}">
+                {{ m.content }}
+                <div style="font-size:10px;opacity:0.7;margin-top:4px;">{{ m.created_at[11:16] }}</div>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align:center;color:#aaa;font-family:Arial;font-size:13px;margin:auto;">Начните диалог</div>
+        {% endfor %}
+    </div>
+    <form method="post" style="display:flex;gap:12px;">
+        <input type="text" name="content" placeholder="Написать сообщение..." required
+            style="flex:1;padding:12px;border:1px solid #ddd;font-family:Arial;font-size:14px;">
+        <button type="submit" class="btn btn-primary">Отправить</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends '_base.html' %}
+{% block title %}Каталог — Alex Wake{% endblock %}
+{% block content %}
+<h1 style="font-size:32px;font-weight:normal;letter-spacing:3px;text-transform:uppercase;margin-bottom:32px;">Каталог <span style="color:#c9a96e;">картин</span></h1>
+
+<!-- Фильтры -->
+<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:32px;padding:20px;background:#fff;border:1px solid #e8e4de;">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;width:100%;">
+        <select name="theme" style="padding:8px 12px;border:1px solid #ddd;font-family:Arial;font-size:13px;">
+            <option value="">Все тематики</option>
+            {% for t in themes %}
+            <option value="{{ t.id }}" {% if filters.theme == t.id|string %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="technique" style="padding:8px 12px;border:1px solid #ddd;font-family:Arial;font-size:13px;">
+            <option value="">Все техники</option>
+            {% for t in techniques %}
+            <option value="{{ t.id }}" {% if filters.technique == t.id|string %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="number" name="price_min" placeholder="Цена от" value="{{ filters.price_min }}"
+            style="padding:8px 12px;border:1px solid #ddd;width:110px;font-family:Arial;font-size:13px;">
+        <input type="number" name="price_max" placeholder="Цена до" value="{{ filters.price_max }}"
+            style="padding:8px 12px;border:1px solid #ddd;width:110px;font-family:Arial;font-size:13px;">
+        <select name="sort" style="padding:8px 12px;border:1px solid #ddd;font-family:Arial;font-size:13px;">
+            <option value="new" {% if filters.sort=='new' %}selected{% endif %}>Новые</option>
+            <option value="rating" {% if filters.sort=='rating' %}selected{% endif %}>По рейтингу</option>
+            <option value="popular" {% if filters.sort=='popular' %}selected{% endif %}>Популярные</option>
+            <option value="price_asc" {% if filters.sort=='price_asc' %}selected{% endif %}>Дешевле</option>
+            <option value="price_desc" {% if filters.sort=='price_desc' %}selected{% endif %}>Дороже</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+        <a href="/catalog" style="font-size:13px;color:#888;font-family:Arial;text-decoration:none;">Сбросить</a>
+    </form>
+</div>
+
+{% if paintings %}
+<div class="paintings-grid">
+    {% for p in paintings %}
+    <div class="painting-card">
+        <a href="/painting/{{ p.id }}">
+            {% if p.image %}
+            <img src="/static/images/paintings/{{ p.image }}" alt="{{ p.title }}">
+            {% else %}
+            <div style="height:240px;background:#f0ece6;display:flex;align-items:center;justify-content:center;font-size:48px;">🖼</div>
+            {% endif %}
+            <div class="painting-card-body">
+                <div class="painting-card-title">{{ p.title }}</div>
+                <div class="painting-card-artist">{{ p.artist_name }}</div>
+                {% if p.theme_name %}<div style="font-size:11px;color:#bbb;font-family:Arial;margin-bottom:6px;">{{ p.theme_name }}</div>{% endif %}
+                <div class="painting-card-price">{{ "%.0f"|format(p.price) }} ₽</div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center;color:#aaa;font-family:Arial;padding:80px;font-size:15px;">
+    Картины не найдены. <a href="/catalog" style="color:#c9a96e;">Сбросить фильтры</a>
+</div>
+{% endif %}
+{% endblock %}
